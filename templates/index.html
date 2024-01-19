@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Example</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Discord Communicator</h1>
+
+    <ul id="connections"></ul>
+
+    <div>
+        <label for="messageSendInput">Enter message:</label>
+        <input type="text" id="messageSendInput">
+        <br/>
+        <label for="prefix">Prefix:</label>
+        <input type="text" id="prefix">
+        <br/>
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+
+    <ul id="messages"></ul>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
+    <script>
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        function sendMessage() {
+            const message = document.getElementById('messageSendInput').value;
+            const prefix = document.getElementById('prefix').value;
+            const input_data = prefix + ' ' + message;
+            document.getElementById('messages').appendChild(document.createElement('li')).textContent = '> ' + message;
+            socket.emit('decrypt_in', {input_data: input_data});
+        }
+
+        socket.on('decrypt_out', function(data) {
+            document.getElementById('messages').appendChild(document.createElement('li')).textContent = '< ' + data.message;
+        });
+
+        socket.on('connect', function(data) {
+            document.getElementById('connections').appendChild(document.createElement('li')).textContent = data.message;
+        });
+    </script>
+</body>
+</html>
