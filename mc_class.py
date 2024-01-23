@@ -26,7 +26,6 @@ class multiCom(commands.Cog):
     receiving = 0
     s_in = ''
     external_sio = socketio.AsyncRedisManager('redis://', write_only=False, channel='flask-socketio')
-    # sio_server = socketio.AsyncServer(client_manager=external_sio, async_mode='aiohttp', async_handlers=True, always_connect=True)
 
     def __init__(self, bot: commands.Bot, channel_id: int):
         self.bot = bot
@@ -35,7 +34,7 @@ class multiCom(commands.Cog):
         self.smd = SharedMemoryDict(name='msg_in', size=1024)
         # self.loop = asyncio.get_event_loop()
         # self.executor = ThreadPoolExecutor()
-        self.check_for_msg_task.start()
+        self.main_task.start()
 
     def get_id_from_prefix(self, prefix: str):
         for i in range(len(self.connections)):
@@ -56,14 +55,14 @@ class multiCom(commands.Cog):
         self.master_key = self.key_part * key_part_2
         self.connections.append((self.prefix_temp, AES(self.master_key)))
         print(f'\nMaster Key: {self.master_key}\nPrefix: {self.prefix_temp}\n')
-        await self.external_sio.emit('connect', {'message': self.prefix_temp})
+        await self.external_sio.emit('bot_connect', {'message': self.prefix_temp})
         await ctx.send(f'{self.prefix_temp}keyExchange3 {pow(key_part_2, e_2, n_2)}')
 
     async def key_exchange_3(self, ctx, key_part_2: int):
         self.master_key = self.key_part * pow(key_part_2, self.d, self.n)
         self.connections.append((self.prefix_temp, AES(self.master_key)))
         print(f'\nMaster Key: {self.master_key}\nPrefix: {self.prefix_temp}\n')
-        await self.external_sio.emit('connect', {'message': self.prefix_temp})
+        await self.external_sio.emit('bot_connect', {'message': self.prefix_temp})
         await ctx.send('Connection succeed, messages can be transmitted')
 
     @commands.Cog.listener()
@@ -115,6 +114,10 @@ class multiCom(commands.Cog):
         self.prefix_temp = prefix_foreign
         await ctx.send(f'{self.prefix_temp}keyExchange0 {self.bot.command_prefix}')
 
+    async def check_status_manual(self, prefix_foreign: str):
+        self.prefix_temp = prefix_foreign
+        await self.bot.get_channel(self.channel_id).send(f'{prefix_foreign}keyExchange0 {self.bot.command_prefix}')
+
     @commands.command(name='ping', help='returns the ping')
     async def ping(self, ctx):
         await ctx.send(f'Pong! {round(self.bot.latency * 1000, 1)} ms')
@@ -136,22 +139,28 @@ class multiCom(commands.Cog):
         for size in temp_list:
             await channel.send(f'{prefix_foreign}getMessage {s[start: start + size]}')
             start += size
-        print('Message sent! \n')
 
     async def get_message(self, ctx, prefix: str, s: str):
         temp_list = s.split(',')
         out = ''
         for char in temp_list:
             out += chr(self.connections[self.get_id_from_prefix(prefix)][1].decrypt(int(char)))
-        await ctx.send(f'Message received')
         await self.external_sio.emit('decrypt_out', {'message': out})
-        print(f'\nreceived Message from {prefix}:\n> {out}')
 
     @tasks.loop(seconds=1)
-    async def check_for_msg_task(self):
+    async def main_task(self):
+        # message inc check
         if 'message' in self.smd and self.smd['message'][0]:
-            self.smd['message'] = (False, '', '')
             await self.send_message_manual(self.smd['message'][1], self.smd['message'][2])
+            self.smd['message'] = (False, '', '')
+
+        # connect check
+        if 'connect' in self.smd and self.smd['connect'][0]:
+            await self.check_status_manual(str(self.smd['connect'][1]))
+            self.smd['connect'] = (False, '')
+
+        # ping sender
+        await self.external_sio.emit('ping', {'message': 'Bot ping: ' + str(round(self.bot.latency * 1000, 1)) + ' ms'})
 
 
 if __name__ == '__main__':

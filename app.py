@@ -31,10 +31,13 @@ def decrypt_in(data):
     prefix = str(data["input_data"]).split(' ')[0]
     message = str(data["input_data"]).split(' ', 1)[1]
     smd['message'] = (True, prefix, message)
-    print(f"Received message to display: {message}")
-    if 'message' in smd:
-        print(smd['message'])
+
+@sio.on('connect_to_bot', namespace='/')
+def connect_to_bot(data):
+    prefix = str(data["prefix_out"])
+    print(f"Received message to connect to bot: {prefix}")
+    smd['connect'] = (True, prefix)
 
 
 if __name__ == '__main__':
-    sio.run(app, host=os.getenv('IP', '0.0.0.0'), port=int(os.getenv('PORT', 8080)), debug=True, allow_unsafe_werkzeug=True)
+    sio.run(app, host=os.getenv('IP', '0.0.0.0'), port=int(os.getenv('PORT', 8080)), log_output=False,  allow_unsafe_werkzeug=True)

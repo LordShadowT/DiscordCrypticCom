@@ -1,43 +1,69 @@
 body {
-    background-color: #282c35;
-    color: #fff;
-    font-family: Arial, sans-serif;
-    margin: 0;
+    background-color: #20232a;
+    color: #61dafb;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 20px 150px;
     padding: 0;
 }
 
-h1 {
-    color: #e44d26;
+header {
+    background-color: #282c35;
+    padding: 20px;
+    text-align: center;
 }
 
-div {
+h1 {
+    color: #61dafb;
+    margin: 0;
+}
+
+section {
     margin-top: 20px;
 }
 
+.form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 label {
-    color: #fff;
+    color: #61dafb;
+    margin-bottom: 5px;
 }
 
 input {
-    padding: 5px;
-    margin-bottom: 10px;
-    border: 1px solid #555;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #61dafb;
     border-radius: 5px;
-    background-color: #333;
-    color: #fff;
+    background-color: #282c35;
+    color: #61dafb;
 }
 
 button {
-    padding: 8px 12px;
-    background-color: #e44d26;
-    color: #fff;
+    padding: 12px 20px;
+    background-color: #61dafb;
+    color: #20232a;
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
 
 button:hover {
-    background-color: #d13d20;
+    background-color: #4fa3d1;
+}
+
+.connections-container,
+.messages-container {
+    margin-top: 30px;
+}
+
+h2 {
+    color: #61dafb;
+    border-bottom: 2px solid #61dafb;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
 }
 
 ul {
@@ -48,5 +74,3 @@ ul {
 li {
     margin-bottom: 10px;
 }
-
-/* Add any additional styles as needed */

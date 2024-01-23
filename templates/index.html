@@ -3,28 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Example</title>
+    <title>DisBot Encryption</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Discord Communicator</h1>
+    <header>
+        <h1>Discord Communicator</h1>
+    </header>
 
-    <ul id="connections"></ul>
+    <section id="connection-section">
+        <div class="form-container">
+            <label for="prefix_out">Prefix:</label>
+            <input type="text" id="prefix_out" placeholder="Enter prefix"/>
+            <button onclick="connectToBot()">Connect</button>
+        </div>
 
-    <div>
-        <label for="messageSendInput">Enter message:</label>
-        <input type="text" id="messageSendInput">
-        <br/>
-        <label for="prefix">Prefix:</label>
-        <input type="text" id="prefix">
-        <br/>
-        <button onclick="sendMessage()">Send Message</button>
-    </div>
+        <div class="connections-container">
+            <h2>Connections</h2>
+            <ul id="connections"></ul>
+        </div>
+    </section>
 
-    <ul id="messages"></ul>
+    <section id="message-section">
+        <div class="form-container">
+            <label for="messageSendInput">Enter message:</label>
+            <input type="text" id="messageSendInput" placeholder="Type your message"/>
+            <label for="prefix">Prefix:</label>
+            <input type="text" id="prefix" placeholder="Enter prefix"/>
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+
+        <div class="messages-container">
+            <h2>Messages</h2>
+            <ul id="messages"></ul>
+        </div>
+    </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
     <script>
+        document.getElementById('prefix_out').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                connectToBot();
+            }
+        })
+
         var socket = io.connect('http://' + document.domain + ':' + location.port);
 
         function sendMessage() {
@@ -35,13 +58,30 @@
             socket.emit('decrypt_in', {input_data: input_data});
         }
 
+        function connectToBot() {
+            const prefix_out = document.getElementById('prefix_out').value;
+            socket.emit('connect_to_bot', {prefix_out: prefix_out});
+        }
+
         socket.on('decrypt_out', function(data) {
             document.getElementById('messages').appendChild(document.createElement('li')).textContent = '< ' + data.message;
         });
 
-        socket.on('connect', function(data) {
+        socket.on('bot_connect', function(data) {
             document.getElementById('connections').appendChild(document.createElement('li')).textContent = data.message;
+        });
+
+
+        // information display received from server
+        socket.on('ping', function(data) {
+            document.getElementById('ping').textContent = data.message;
+        });
+
+        socket.on('id', function(data) {
+            document.getElementById('bot_id').textContent = data.message;
         });
     </script>
 </body>
 </html>
+
+
