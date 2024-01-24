@@ -1,0 +1,7 @@
+discord.py~=2.3.2
+flask~=3.0.1
+flask_socketio~=5.3.6
+redis~=5.0.1
+shared-memory-dict~=0.7.2
+virtualenv~=20.25.0
+python-socketio~=5.11.0

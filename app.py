@@ -1,7 +1,6 @@
 # app.py
 import os
 from flask_socketio import SocketIO
-from dotenv import load_dotenv
 from flask import Flask, render_template
 from shared_memory_dict import SharedMemoryDict
 
