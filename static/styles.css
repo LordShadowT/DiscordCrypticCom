@@ -4,6 +4,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 20px 150px;
     padding: 0;
+    display: block;
 }
 
 header {
@@ -57,6 +58,21 @@ button:hover {
 .connections-container,
 .messages-container {
     margin-top: 30px;
+    background-color: #17181c;
+    border: #4fa3d1 2px solid;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.connections-container li {
+    display: flex;
+    justify-content: center;
+}
+
+.messages-container {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 h2 {

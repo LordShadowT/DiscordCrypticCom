@@ -18,13 +18,6 @@ def index():
     return render_template('index.html')
 
 
-# @sio.on('display_string')
-def handle_display_string(data):
-    message = data['message']
-    print(f"Received message to display: {message}")
-    sio.emit('display_string', {'message': message})
-
-
 # runs when a message is received from the socketio server
 @sio.on('decrypt_in', namespace='/')
 def decrypt_in(data):
@@ -35,7 +28,6 @@ def decrypt_in(data):
 @sio.on('connect_to_bot', namespace='/')
 def connect_to_bot(data):
     prefix = str(data["prefix_out"])
-    print(f"Received message to connect to bot: {prefix}")
     smd['connect'] = (True, prefix)
 
 

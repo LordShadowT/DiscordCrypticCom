@@ -69,5 +69,4 @@ def generate_keys(bit_length):
     while e == _key_1 or e == _key_2:
         e = generate_large_prime(bit_length // 2)
     d = modular_inverse(e, low)
-    print(f'\nn = {n}\nd (private) = {d}\ne (public) = {e}\n')
     return n, d, e

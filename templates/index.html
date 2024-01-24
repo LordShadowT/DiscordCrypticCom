@@ -11,6 +11,14 @@
         <h1>Discord Communicator</h1>
     </header>
 
+    <section id="info-section">
+        <div class="info-container">
+            <h2>Information</h2>
+            <p>Bot Prefix: <span id="own_prefix"></span></p>
+            <p>Ping: <span id="ping"></span></p>
+        </div>
+    </section>
+
     <section id="connection-section">
         <div class="form-container">
             <label for="prefix_out">Prefix:</label>
@@ -18,8 +26,9 @@
             <button onclick="connectToBot()">Connect</button>
         </div>
 
+        <h2>Connections</h2>
+
         <div class="connections-container">
-            <h2>Connections</h2>
             <ul id="connections"></ul>
         </div>
     </section>
@@ -33,10 +42,7 @@
             <button onclick="sendMessage()">Send Message</button>
         </div>
 
-        <div class="messages-container">
-            <h2>Messages</h2>
-            <ul id="messages"></ul>
-        </div>
+        <h2>Messages</h2>
     </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
@@ -54,17 +60,26 @@
             const message = document.getElementById('messageSendInput').value;
             const prefix = document.getElementById('prefix').value;
             const input_data = prefix + ' ' + message;
-            document.getElementById('messages').appendChild(document.createElement('li')).textContent = '> ' + message;
+            document.getElementById(`${prefix}_messages`).appendChild(document.createElement('li')).textContent = '> ' + message;
             socket.emit('decrypt_in', {input_data: input_data});
         }
 
         function connectToBot() {
             const prefix_out = document.getElementById('prefix_out').value;
+            if (document.getElementById(`${prefix_out}_messages`) == null) {
+                const element = document.createElement('div');
+                element.setAttribute('class', `messages-container`);
+                element.appendChild(document.createElement('h2')).textContent = `Messages for ${prefix_out}`;
+                element.appendChild(document.createElement('ul')).setAttribute('id', `${prefix_out}_messages`);
+                document.getElementById('message-section').appendChild(element);
+            }
             socket.emit('connect_to_bot', {prefix_out: prefix_out});
         }
 
         socket.on('decrypt_out', function(data) {
-            document.getElementById('messages').appendChild(document.createElement('li')).textContent = '< ' + data.message;
+            const prefix = data.message.split(' ')[0];
+            const message = data.message.split(' ').slice(1).join(' ');
+            document.getElementById(`${prefix}_messages`).appendChild(document.createElement('li')).textContent = '< ' + message;
         });
 
         socket.on('bot_connect', function(data) {
@@ -77,8 +92,16 @@
             document.getElementById('ping').textContent = data.message;
         });
 
-        socket.on('id', function(data) {
+        socket.on('bot_id', function(data) {
             document.getElementById('bot_id').textContent = data.message;
+        });
+
+        socket.on('bot_prefix', function(data) {
+            document.getElementById('own_prefix').textContent = data.message;
+        });
+
+        socket.on('bot_name', function(data) {
+            document.getElementById('bot_name').textContent = data.message;
         });
     </script>
 </body>

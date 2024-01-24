@@ -12,12 +12,12 @@ def get_bot(prefix: str, channel_id: int):
     intents = discord.Intents.default()
     intents.message_content = True
     bot = commands.Bot(command_prefix=prefix, intents=intents)
-    bot.add_cog(multiCom(bot, channel_id))
+    bot.add_cog(multiCom(bot, channel_id, bot.command_prefix))
     return bot
 
 
 class multiCom(commands.Cog):
-    prefix = 'LLL!'
+    prefix = ''
     prefix_temp = ''
     connections = []
     # connection entry structure: (prefix: str, AES object: AES)
@@ -27,13 +27,12 @@ class multiCom(commands.Cog):
     s_in = ''
     external_sio = socketio.AsyncRedisManager('redis://', write_only=False, channel='flask-socketio')
 
-    def __init__(self, bot: commands.Bot, channel_id: int):
+    def __init__(self, bot: commands.Bot, channel_id: int, prefix: int):
         self.bot = bot
+        self.prefix = prefix
         self.channel_id = channel_id
         self.n, self.d, self.e = generate_keys(1028)
         self.smd = SharedMemoryDict(name='msg_in', size=1024)
-        # self.loop = asyncio.get_event_loop()
-        # self.executor = ThreadPoolExecutor()
         self.main_task.start()
 
     def get_id_from_prefix(self, prefix: str):
@@ -106,43 +105,34 @@ class multiCom(commands.Cog):
             else:
                 self.receiving = int(message.content.split(' ')[1])
                 self.s_in = message.content.split(' ')[2] + ' '
-        # await self.bot.process_commands(message)
 
-    @commands.command(name='checkStatus', help='connects to other bots', aliases=['connect'])
-    @commands.is_owner()
-    async def check_status(self, ctx, prefix_foreign: str):
-        self.prefix_temp = prefix_foreign
-        await ctx.send(f'{self.prefix_temp}keyExchange0 {self.bot.command_prefix}')
-
-    async def check_status_manual(self, prefix_foreign: str):
+    async def connect(self, prefix_foreign: str):
         self.prefix_temp = prefix_foreign
         await self.bot.get_channel(self.channel_id).send(f'{prefix_foreign}keyExchange0 {self.bot.command_prefix}')
 
-    @commands.command(name='ping', help='returns the ping')
-    async def ping(self, ctx):
-        await ctx.send(f'Pong! {round(self.bot.latency * 1000, 1)} ms')
-
-    async def send_message_manual(self, prefix_foreign: str, s: str):
+    async def send_message(self, prefix_foreign: str, s: str):
         channel = self.bot.get_channel(self.channel_id)
         temp_list = []
-        for char in s:
-            temp_list.append(str(self.connections[self.get_id_from_prefix(prefix_foreign)][1].encrypt(ord(char))))
-        s = ','.join(temp_list)
-        temp_list = []
-        for i in range(len(s) // 1800 + 1):
-            if (len(s) - (i * 1800)) < 1800:
-                temp_list.append(len(s) - (i * 1800))
-            else:
-                temp_list.append(1800)
-        await channel.send(f'{prefix_foreign}getMessage {len(temp_list)} {self.bot.command_prefix}')
-        start = 0
-        for size in temp_list:
-            await channel.send(f'{prefix_foreign}getMessage {s[start: start + size]}')
-            start += size
+        enc_id = self.get_id_from_prefix(prefix_foreign)
+        if isinstance(enc_id, int):
+            for char in s:
+                temp_list.append(str(self.connections[enc_id][1].encrypt(ord(char))))
+            s = ','.join(temp_list)
+            temp_list = []
+            for i in range(len(s) // 1800 + 1):
+                if (len(s) - (i * 1800)) < 1800:
+                    temp_list.append(len(s) - (i * 1800))
+                else:
+                    temp_list.append(1800)
+            await channel.send(f'{prefix_foreign}getMessage {len(temp_list)} {self.bot.command_prefix}')
+            start = 0
+            for size in temp_list:
+                await channel.send(f'{prefix_foreign}getMessage {s[start: start + size]}')
+                start += size
 
     async def get_message(self, ctx, prefix: str, s: str):
         temp_list = s.split(',')
-        out = ''
+        out = f'{prefix} '
         for char in temp_list:
             out += chr(self.connections[self.get_id_from_prefix(prefix)][1].decrypt(int(char)))
         await self.external_sio.emit('decrypt_out', {'message': out})
@@ -151,16 +141,17 @@ class multiCom(commands.Cog):
     async def main_task(self):
         # message inc check
         if 'message' in self.smd and self.smd['message'][0]:
-            await self.send_message_manual(self.smd['message'][1], self.smd['message'][2])
+            await self.send_message(self.smd['message'][1], self.smd['message'][2])
             self.smd['message'] = (False, '', '')
 
         # connect check
         if 'connect' in self.smd and self.smd['connect'][0]:
-            await self.check_status_manual(str(self.smd['connect'][1]))
+            await self.connect(str(self.smd['connect'][1]))
             self.smd['connect'] = (False, '')
 
         # ping sender
-        await self.external_sio.emit('ping', {'message': 'Bot ping: ' + str(round(self.bot.latency * 1000, 1)) + ' ms'})
+        await self.external_sio.emit('ping', {'message': str(round(self.bot.latency * 1000, 1)) + ' ms'})
+        await self.external_sio.emit('bot_prefix', {'message': self.prefix})
 
 
 if __name__ == '__main__':
