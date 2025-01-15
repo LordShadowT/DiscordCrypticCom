@@ -33,17 +33,7 @@
         </div>
     </section>
 
-    <section id="message-section">
-        <div class="form-container">
-            <label for="messageSendInput">Enter message:</label>
-            <input type="text" id="messageSendInput" placeholder="Type your message"/>
-            <label for="prefix">Prefix:</label>
-            <input type="text" id="prefix" placeholder="Enter prefix"/>
-            <button onclick="sendMessage()">Send Message</button>
-        </div>
-
-        <h2>Messages</h2>
-    </section>
+    <section id="message-section"></section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
     <script>
@@ -56,27 +46,38 @@
 
         var socket = io.connect('http://' + document.domain + ':' + location.port);
 
-        function sendMessage() {
-            const message = document.getElementById('messageSendInput').value;
-            const prefix = document.getElementById('prefix').value;
-            const input_data = prefix + ' ' + message;
-            document.getElementById(`${prefix}_messages`).appendChild(document.createElement('li')).textContent = '> ' + message;
-            socket.emit('decrypt_in', {input_data: input_data});
+        function sendMessageWithPrefix(prefix) {
+            const input_data = prefix + ' ' + document.getElementById(`${prefix}_message-input`).value;
+            document.getElementById(`${prefix}_messages`).appendChild(document.createElement('li')).textContent = '> ' + document.getElementById(`${prefix}_message-input`).value;
+            socket.emit('decrypt_out', {input_data: input_data});
         }
 
         function connectToBot() {
             const prefix_out = document.getElementById('prefix_out').value;
             if (document.getElementById(`${prefix_out}_messages`) == null) {
-                const element = document.createElement('div');
-                element.setAttribute('class', `messages-container`);
-                element.appendChild(document.createElement('h2')).textContent = `Messages for ${prefix_out}`;
-                element.appendChild(document.createElement('ul')).setAttribute('id', `${prefix_out}_messages`);
+                let element = document.createElement('div');
+                document.getElementById('message-section').appendChild(document.createElement('h2')).textContent = `Messages for ${prefix_out}`;
                 document.getElementById('message-section').appendChild(element);
+                element.setAttribute('class', `messages-container`);
+                element.appendChild(document.createElement('ul')).setAttribute('id', `${prefix_out}_messages`);
+                element = document.createElement('div');
+                element.setAttribute('class', `form-container`);
+                element.appendChild(document.createElement('input')).setAttribute('id', `${prefix_out}_message-input`);
+                document.getElementById('message-section').appendChild(element);
+                document.getElementById(`${prefix_out}_message-input`).addEventListener('keypress', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        sendMessageWithPrefix(prefix_out);
+                    }
+                })
+                element.appendChild(document.createElement('button')).setAttribute('id', `${prefix_out}_message-button`);
+                document.getElementById(`${prefix_out}_message-button`).textContent = `Send`;
+                document.getElementById(`${prefix_out}_message-button`).setAttribute('onclick', `sendMessageWithPrefix('${prefix_out}')`);
             }
             socket.emit('connect_to_bot', {prefix_out: prefix_out});
         }
 
-        socket.on('decrypt_out', function(data) {
+        socket.on('decrypt_in', function(data) {
             const prefix = data.message.split(' ')[0];
             const message = data.message.split(' ').slice(1).join(' ');
             document.getElementById(`${prefix}_messages`).appendChild(document.createElement('li')).textContent = '< ' + message;

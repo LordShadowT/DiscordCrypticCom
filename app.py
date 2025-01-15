@@ -18,8 +18,8 @@ def index():
 
 
 # runs when a message is received from the socketio server
-@sio.on('decrypt_in', namespace='/')
-def decrypt_in(data):
+@sio.on('decrypt_out', namespace='/')
+def decrypt_out(data):
     prefix = str(data["input_data"]).split(' ')[0]
     message = str(data["input_data"]).split(' ', 1)[1]
     smd['message'] = (True, prefix, message)

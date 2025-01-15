@@ -135,7 +135,7 @@ class multiCom(commands.Cog):
         out = f'{prefix} '
         for char in temp_list:
             out += chr(self.connections[self.get_id_from_prefix(prefix)][1].decrypt(int(char)))
-        await self.external_sio.emit('decrypt_out', {'message': out})
+        await self.external_sio.emit('decrypt_in', {'message': out})
 
     @tasks.loop(seconds=1)
     async def main_task(self):

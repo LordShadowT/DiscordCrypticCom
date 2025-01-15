@@ -1,5 +1,5 @@
 # DiscordCrypticCom
-A Communicator, that creates a local website and exchanges encrypted messages with other clients via Discord
+A Communicator, that creates a local website and exchanges encrypted messages with other clients via Discord (now supports multiple clients)
 
 Actually, you shouldn't use this., it's more or less a proof of concept.
 
